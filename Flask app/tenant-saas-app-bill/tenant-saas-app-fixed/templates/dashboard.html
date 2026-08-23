@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<!-- Welcome card -->
+<div class="card-lift p-4 mb-4 fade-in-up d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">Welcome back, {{ identity.username }} 👋</h3>
+    <p class="text-muted mb-0">Here's what's happening with your account today.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('users.user_details_page') }}" class="btn btn-outline-soft"><i class="fa-solid fa-id-card me-2"></i>My Profile</a>
+    <a href="{{ url_for('password.reset_page') }}" class="btn btn-brand"><i class="fa-solid fa-key me-2"></i>Security</a>
+  </div>
+</div>
+
+<!-- Stat cards -->
+<div class="row g-4 mb-4">
+  <div class="col-md-3 col-sm-6 fade-in-up">
+    <div class="stat-card gradient-indigo">
+      <div class="stat-icon"><i class="fa-solid fa-building"></i></div>
+      <div class="stat-value">{{ identity.tenant }}</div>
+      <div class="stat-label">Tenant</div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6 fade-in-up">
+    <div class="stat-card gradient-teal">
+      <div class="stat-icon"><i class="fa-solid fa-briefcase"></i></div>
+      <div class="stat-value">{{ record.department or 'Not set' }}</div>
+      <div class="stat-label">Department</div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6 fade-in-up">
+    <div class="stat-card gradient-sky">
+      <div class="stat-icon"><i class="fa-solid fa-user-shield"></i></div>
+      <div class="stat-value">{{ identity.role | capitalize }}</div>
+      <div class="stat-label">Role</div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6 fade-in-up">
+    <div class="stat-card gradient-amber">
+      <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="stat-value">{{ 'Active' if record.get('enabled', True) else 'Disabled' }}</div>
+      <div class="stat-label">Account Status</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Profile completion + security -->
+  <div class="col-lg-5">
+    <div class="card-lift p-4 mb-4">
+      <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-simple me-2 text-primary"></i>Profile Completion</h5>
+      <div class="progress-thin mb-2">
+        <div class="progress-bar gradient-indigo" role="progressbar" style="width: {{ profile_completion }}%; background: linear-gradient(90deg,#6366f1,#4338ca);"></div>
+      </div>
+      <p class="text-muted small mb-0">{{ profile_completion }}% complete — <a href="{{ url_for('users.user_details_page') }}">finish your profile</a></p>
+    </div>
+
+    <div class="card-lift p-4">
+      <h5 class="fw-bold mb-3"><i class="fa-solid fa-lock me-2 text-primary"></i>Security Status</h5>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="text-muted">Password last changed</span>
+        <span class="fw-semibold">{{ record.password_last_changed or 'Unknown' }}</span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="text-muted">Multi-tenant isolation</span>
+        <span class="badge bg-success-subtle text-success">Enforced</span>
+      </div>
+      <a href="{{ url_for('password.reset_page') }}" class="btn btn-outline-soft w-100"><i class="fa-solid fa-key me-2"></i>Change Password</a>
+    </div>
+  </div>
+
+  <!-- Recent activity + quick actions -->
+  <div class="col-lg-7">
+    <div class="card-lift p-4 mb-4">
+      <h5 class="fw-bold mb-3"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Recent Activity</h5>
+      <ul class="list-unstyled mb-0">
+        <li class="d-flex align-items-start gap-3 mb-3">
+          <span class="avatar-circle"><i class="fa-solid fa-right-to-bracket"></i></span>
+          <div><div class="fw-semibold">Signed in</div><div class="text-muted small">Just now</div></div>
+        </li>
+        <li class="d-flex align-items-start gap-3 mb-3">
+          <span class="avatar-circle"><i class="fa-solid fa-id-card"></i></span>
+          <div><div class="fw-semibold">Profile viewed</div><div class="text-muted small">Today</div></div>
+        </li>
+        <li class="d-flex align-items-start gap-3">
+          <span class="avatar-circle"><i class="fa-solid fa-key"></i></span>
+          <div><div class="fw-semibold">Password last updated</div><div class="text-muted small">{{ record.password_last_changed or 'Unknown' }}</div></div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card-lift p-4">
+      <h5 class="fw-bold mb-3"><i class="fa-solid fa-bolt me-2 text-primary"></i>Quick Actions</h5>
+      <div class="row g-3">
+        <div class="col-6">
+          <a href="{{ url_for('users.user_details_page') }}" class="btn btn-outline-soft w-100 py-3">
+            <i class="fa-solid fa-id-card d-block mb-2 fs-4"></i>Edit Profile
+          </a>
+        </div>
+        <div class="col-6">
+          <a href="{{ url_for('password.reset_page') }}" class="btn btn-outline-soft w-100 py-3">
+            <i class="fa-solid fa-key d-block mb-2 fs-4"></i>Change Password
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
