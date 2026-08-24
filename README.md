@@ -204,7 +204,6 @@ Secure-Multi-Tenant-SaaS-Platform/
 - Amazon CloudWatch
 - CloudWatch Logs
 - CloudWatch Dashboards
-- AWS CloudTrail
 - Application monitoring
 - Infrastructure monitoring
 
