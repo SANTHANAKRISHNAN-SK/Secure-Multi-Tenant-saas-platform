@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block content %}
+
+<div class="row g-4">
+  <!-- Profile summary card -->
+  <div class="col-lg-4">
+    <div class="card-lift p-4 text-center fade-in-up">
+      <div class="avatar-circle mx-auto mb-3" style="width:84px;height:84px;font-size:1.8rem;">
+        {{ (record.username or identity.username or 'U')[0] | upper }}
+      </div>
+      <h5 class="fw-bold mb-0">{{ record.username or identity.username }}</h5>
+      <p class="text-muted mb-3">{{ record.email or identity.email }}</p>
+      <div class="d-flex justify-content-center gap-2 mb-3">
+        <span class="badge role-badge role-{{ identity.role }}"><i class="fa-solid fa-shield-halved me-1"></i>{{ identity.role | capitalize }}</span>
+        <span class="badge bg-secondary-subtle text-secondary"><i class="fa-solid fa-building me-1"></i>{{ identity.tenant }}</span>
+      </div>
+      <div class="progress-thin mb-1">
+        <div class="progress-bar" role="progressbar" style="width: {{ profile_completion }}%; background: linear-gradient(90deg,#14b8a6,#0f766e);"></div>
+      </div>
+      <small class="text-muted">{{ profile_completion }}% profile complete</small>
+    </div>
+  </div>
+
+  <!-- Editable form -->
+  <div class="col-lg-8">
+    <div class="card-lift p-4 fade-in-up">
+      <h5 class="fw-bold mb-4"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Edit Details</h5>
+
+      <form method="post"
+            action="{{ url_for('users.user_details_update') }}"
+            enctype="multipart/form-data"
+            class="needs-validation"
+            novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Full name</label>
+            <input type="text" class="form-control" name="name" value="{{ record.username or '' }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email" value="{{ record.email or '' }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Phone</label>
+            <input type="text" class="form-control" name="phone" value="{{ record.phone or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Department</label>
+            <input type="text" class="form-control" name="department" value="{{ record.department or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Tenant</label>
+            <input type="text" class="form-control" value="{{ identity.tenant }}" disabled>
+            <small class="text-muted">Tenant is fixed by your organization and cannot be changed here.</small>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Role</label>
+            <input type="text" class="form-control" value="{{ identity.role | capitalize }}" disabled>
+            <small class="text-muted">Role is managed by your administrator.</small>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Profile image</label>
+            <input type="file" class="form-control" name="profile_image" accept="image/*">
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-brand px-4"><i class="fa-solid fa-floppy-disk me-2"></i>Save changes</button>
+          <button type="reset" class="btn btn-outline-soft px-4">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
