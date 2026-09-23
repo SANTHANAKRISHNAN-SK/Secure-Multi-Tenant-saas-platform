@@ -39,8 +39,8 @@ This project was developed as part of an internship to demonstrate cloud archite
 # ✨ Key Features
 
 - 👥 Multi-Tenant Architecture
-- 🔐 Amazon Cognito Authentication
-- 🌐 Amazon API Gateway Integration
+- 🔐 Amazon Cognito Authentication with a Resource Server and custom OAuth scopes
+- 🌐 Amazon API Gateway as the primary JWT authentication and API-scope authorization boundary
 - ⚖️ Application Load Balancer
 - 🐳 Amazon ECS Fargate Deployment
 - 🗄️ Amazon RDS MySQL Database
@@ -49,7 +49,7 @@ This project was developed as part of an internship to demonstrate cloud archite
 - 📊 Amazon CloudWatch Monitoring
 - 📝 AWS CloudTrail Auditing
 - 📦 Amazon ECR Container Registry
-- ☁️ Amazon CloudFront Distribution
+- ☁️ Amazon CloudFront Distribution with a CloudFront Function for token forwarding
 - 📨 Amazon SQS Queue
 - ⚡ AWS Lambda Usage Processing
 - 💰 AWS Billing & Budgets Monitoring
@@ -58,26 +58,57 @@ This project was developed as part of an internship to demonstrate cloud archite
 
 # 🏗️ High-Level Architecture
 
+The platform separates the **user login flow** from the **protected API request flow** — Cognito's Hosted UI is only involved when a user authenticates, not on every subsequent API call.
+
+### Login Flow
+
 ```text
-                Internet
-                    │
-                    ▼
-            Amazon CloudFront
-                    │
-                    ▼
-           Amazon API Gateway
-                    │
-                    ▼
-      Application Load Balancer
-                    │
-                    ▼
-         Amazon ECS Fargate
-                    │
-                    ▼
-            Amazon RDS MySQL
+Browser
+   │
+   ▼
+Amazon CloudFront
+   │
+   ▼
+Cognito Hosted UI
+   │
+   ▼
+Authorization Code
+   │
+   ▼
+/auth/callback (Flask, token exchange)
 ```
 
-### Usage Processing
+### Protected API Request Flow
+
+```text
+Browser
+   │
+   ▼
+Amazon CloudFront
+   │
+   ▼
+CloudFront Function (token forwarding only)
+   │
+   ▼
+Authorization: Bearer <Cognito Access Token>
+   │
+   ▼
+Amazon API Gateway REST API
+   │
+   ▼
+Cognito User Pool Authorizer (JWT + scope validation)
+   │
+   ▼
+Application Load Balancer
+   │
+   ▼
+Amazon ECS Fargate — Flask Application
+   │
+   ▼
+Amazon RDS MySQL
+```
+
+### Usage Metering Flow
 
 ```text
 Amazon ECS
@@ -92,6 +123,64 @@ Amazon ECS
  Amazon RDS
 ```
 
+### Credential Flow
+
+```text
+Amazon ECS / Lambda
+     │
+     ▼
+AWS Secrets Manager
+     │
+     ▼
+AWS KMS
+```
+
+---
+
+# 🔑 Authentication & Authorization
+
+Authentication and authorization are split across four layers, each with a distinct, non-overlapping responsibility:
+
+| Layer | Responsibility |
+|---|---|
+| **Amazon Cognito** | User authentication via the Hosted UI, OAuth 2.0 Authorization Code Grant, and issuance of the JWT Access Token and ID Token |
+| **CloudFront Function** | Reads the Cognito access token from the browser cookie and adds it as `Authorization: Bearer <access_token>`. **Does not** validate the JWT and **does not** authenticate users — token forwarding only |
+| **Amazon API Gateway (Cognito User Pool Authorizer)** | The **primary authentication and API authorization boundary**. Validates the JWT (signature, issuer, expiry) and enforces the required OAuth scope (`saas-api/read` or `saas-api/write`) per method before any request reaches the ALB or ECS |
+| **Flask Application** | **Not** the primary authentication layer. Performs only application-level tenant authorization, role authorization, business logic, and resource authorization after the request has already passed the API Gateway authorization boundary |
+
+This separation keeps unauthenticated, tampered, or under-scoped requests from ever reaching the application tier, while leaving fine-grained, tenant-aware authorization to the Flask application itself.
+
+---
+
+# 🏗️ Cognito Configuration
+
+| Attribute | Value |
+|---|---|
+| User Pool | `kmfplo` |
+| Region | `us-east-1` |
+| App Client | `saas-SPA-cognito-12` |
+| OAuth Flow | Authorization Code Grant |
+| Resource Server | `saas-api` |
+| Custom Scopes | `saas-api/read`, `saas-api/write` |
+| Tenant Groups | `TenantA_admin`, `TenantA_user`, `TenantB_admin`, `TenantB_user` |
+
+The `saas-api` Resource Server defines the custom scopes consumed by the API Gateway Cognito User Pool Authorizer to enforce per-method authorization — the Resource Server itself does not validate JWTs; that validation is performed by API Gateway.
+
+---
+
+# 🚪 API Gateway
+
+| Attribute | Value |
+|---|---|
+| API Type | REST API |
+| Integration | HTTP Proxy Integration |
+| Backend | Application Load Balancer |
+| Protected `GET` routes | Cognito User Pool Authorizer, scope `saas-api/read` |
+| Protected `POST` routes | Cognito User Pool Authorizer, scope `saas-api/write` |
+| Public routes | `Authorization = NONE` |
+
+Every protected method requires a valid Cognito-issued JWT carrying the matching scope; public routes (health checks, login redirects, static assets) bypass the authorizer entirely.
+
 ---
 
 # ☁️ AWS Services Used
@@ -103,14 +192,14 @@ Amazon ECS
 | Application Load Balancer | Traffic distribution |
 | Amazon ECS Fargate | Application hosting |
 | Amazon ECR | Docker image repository |
-| Amazon API Gateway | API management |
-| Amazon Cognito | Authentication & Authorization |
+| Amazon API Gateway | Primary JWT authentication and API-scope authorization boundary |
+| Amazon Cognito | User authentication, JWT issuance, Resource Server & custom OAuth scopes |
 | Amazon RDS | Relational database |
 | AWS Lambda | Background processing |
 | Amazon SQS | Message queue |
 | AWS Secrets Manager | Secure credential management |
 | AWS KMS | Encryption |
-| Amazon CloudFront | Content delivery |
+| Amazon CloudFront | Content delivery + CloudFront Function for token forwarding |
 | Amazon CloudWatch | Monitoring & Logging |
 | AWS CloudTrail | Audit logging |
 | AWS Billing & Budgets | Cost monitoring |
@@ -129,16 +218,17 @@ Secure-Multi-Tenant-SaaS-Platform/
 ├── .gitignore
 │
 ├── docs/
-│   ├── BRD
-│   ├── HLD
-│   ├── LLD
-│   ├── Architecture Diagram
-│   ├── Infrastructure Diagram
-│   ├── SOP
-│   ├── Security Documentation
-│   ├── Monitoring Strategy
-│   ├── Backup & DR
-│   ├── Cost Estimation
+│   ├── 01-Business-Requirement-Document.md
+│   ├── 02-Solution-Architecture.md
+│   ├── 03-High-Level-Design.md
+│   ├── 04-Low-Level-Design.md
+│   ├── 05-Infrastructure-Diagram.md
+│   ├── 06-Deployment-Guide-SOP.md
+│   ├── 07-Security-Architecture.md
+│   ├── 08-Monitoring-and-Logging.md
+│   ├── 09-Backup-and-Disaster-Recovery.md
+│   ├── 10-Cost-Estimation.md
+│   ├── 11-Final-Quality-Review.md
 │   └── Presentation
 │
 ├── aws-services/
@@ -168,34 +258,36 @@ Secure-Multi-Tenant-SaaS-Platform/
 
 # 📚 Project Documentation
 
-| Document | Status |
-|----------|--------|
-| Business Requirements Document (BRD) | ✅ |
-| High-Level Design (HLD) | ✅ |
-| Low-Level Design (LLD) | ✅ |
-| Infrastructure Diagram | ✅ |
-| Architecture Diagram | ✅ |
-| Standard Operating Procedure (SOP) | ✅ |
-| Security Documentation | ✅ |
-| Monitoring Strategy | ✅ |
-| Backup & Disaster Recovery | ✅ |
-| Cost Estimation | ✅ |
-| AWS Service Documentation | ✅ |
-| Presentation | ✅ |
-| Demo Video | ✅ |
+| # | Document | Status |
+|---|----------|--------|
+| 01 | Business Requirement Document (BRD) | ✅ |
+| 02 | Solution Architecture | ✅ |
+| 03 | High-Level Design (HLD) | ✅ |
+| 04 | Low-Level Design (LLD) | ✅ |
+| 05 | Infrastructure Diagram | ✅ |
+| 06 | Deployment Guide / SOP | ✅ |
+| 07 | Security Architecture | ✅ |
+| 08 | Monitoring and Logging | ✅ |
+| 09 | Backup and Disaster Recovery | ✅ |
+| 10 | Cost Estimation | ✅ |
+| 11 | Final Quality Review | ✅ |
+| — | AWS Service Documentation (18 services) | ✅ |
+| — | Presentation | ✅ |
+| — | Demo Video | ✅ |
 
 ---
 
 # 🔐 Security Features
 
-- Secure user authentication
-- Tenant isolation
-- IAM-based access control
-- Encrypted secrets management
-- Encryption using AWS KMS
-- Secure API communication
-- Private database connectivity
-- Audit logging
+- **Primary JWT authentication and API-scope authorization at Amazon API Gateway**, via the Cognito User Pool Authorizer, enforcing the `saas-api/read` and `saas-api/write` scopes per method
+- **Token forwarding only at the CloudFront Function** — it never validates or authenticates the JWT
+- **Application-level tenant and role authorization in Flask**, performed after the request has already cleared the API Gateway authorization boundary
+- Tenant isolation via Cognito User Groups (`TenantA_admin`/`TenantA_user`, `TenantB_admin`/`TenantB_user`)
+- IAM-based, least-privilege access control across ECS, Lambda, and supporting services
+- Encrypted secrets management via AWS Secrets Manager
+- Encryption at rest and in transit using AWS KMS
+- Private, non-public database connectivity for Amazon RDS
+- Audit logging via AWS CloudTrail
 
 ---
 
@@ -241,7 +333,7 @@ Secure-Multi-Tenant-SaaS-Platform/
 
 # 🚀 Deployment Summary
 
-The application is deployed using AWS managed services with a secure multi-tier architecture. Requests are authenticated, routed through the API layer, processed by containerized application services, stored securely in the relational database, and monitored through AWS observability services.
+The application is deployed using AWS managed services with a secure multi-tier architecture. Browser requests pass through CloudFront and a CloudFront Function that forwards the Cognito access token, are authenticated and scope-checked at API Gateway's Cognito User Pool Authorizer, then proxied through the Application Load Balancer to the containerized Flask application running on Amazon ECS Fargate. The Flask application performs tenant-, role-, and resource-level authorization before reading from or writing to Amazon RDS MySQL. Tenant usage events are published to Amazon SQS and processed asynchronously by AWS Lambda, while credentials for ECS and Lambda are retrieved from AWS Secrets Manager and decrypted via AWS KMS. The full stack is monitored through Amazon CloudWatch and audited through AWS CloudTrail.
 
 ---
 
