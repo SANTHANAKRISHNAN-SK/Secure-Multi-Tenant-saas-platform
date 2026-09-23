@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% set hide_shell = true %}
+{% block title %}Sign in{% endblock %}
+{% block auth_content %}
+<div class="auth-card">
+
+  <div class="auth-visual">
+    <div class="glow"></div>
+    <i class="fa-solid fa-cloud fa-2x mb-4"></i>
+    <h2 class="fw-bold mb-3">TenantCloud</h2>
+    <p class="opacity-75">
+      A single console for every tenant. Sign in with your organization's
+      Cognito identity and we'll route you straight to your workspace —
+      the right tenant, the right role, automatically.
+    </p>
+    <ul class="list-unstyled mt-4 opacity-75 small">
+      <li class="mb-2"><i class="fa-solid fa-check me-2"></i>Tenant isolation enforced server-side</li>
+      <li class="mb-2"><i class="fa-solid fa-check me-2"></i>Role-based dashboards</li>
+      <li><i class="fa-solid fa-check me-2"></i>Secured with AWS Cognito &amp; KMS</li>
+    </ul>
+  </div>
+
+  <div class="auth-form-side">
+    <h3 class="fw-bold mb-1">Welcome back</h3>
+    <p class="text-muted mb-4">Sign in to access your dashboard.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} py-2">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% if demo_mode %}
+    <form method="post" action="{{ url_for('auth_pages.login_demo_submit') }}" class="needs-validation" novalidate>
+      <div class="alert alert-info small">
+        <i class="fa-solid fa-circle-info me-1"></i>
+        Demo mode: Cognito Hosted UI is bypassed. Pick a tenant/role group to simulate a validated JWT.
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-control" name="username" placeholder="e.g. alice.admin" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-control" name="email" placeholder="you@company.com" required>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Cognito Group (simulated)</label>
+        <select class="form-select" name="demo_group" required>
+          <option value="" disabled selected>Select a group...</option>
+          <option value="TenantA_admin">TenantA_admin</option>
+          <option value="TenantA_user">TenantA_user</option>
+          <option value="TenantB_admin">TenantB_admin</option>
+          <option value="TenantB_user">TenantB_user</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-brand w-100 py-2">
+        <i class="fa-solid fa-right-to-bracket me-2"></i>Sign in
+      </button>
+    </form>
+    {% else %}
+    <div class="mb-4">
+      <p class="text-muted small">
+        You'll be redirected to your organization's secure Cognito sign-in page. First-time
+        users will be asked to set a new password there before returning here.
+      </p>
+    </div>
+    <a href="{{ url_for('auth_pages.login_redirect') }}" class="btn btn-brand w-100 py-2">
+      <i class="fa-solid fa-right-to-bracket me-2"></i>Sign in with Cognito
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

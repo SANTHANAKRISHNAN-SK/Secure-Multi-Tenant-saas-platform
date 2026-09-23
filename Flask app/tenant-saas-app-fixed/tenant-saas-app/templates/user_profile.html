@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block content %}
+
+<div class="row g-4">
+  <!-- Profile summary card -->
+  <div class="col-lg-4">
+    <div class="card-lift p-4 text-center fade-in-up">
+      <div class="avatar-circle mx-auto mb-3" style="width:84px;height:84px;font-size:1.8rem;">
+        {{ (record.username or identity.username or 'U')[0] | upper }}
+      </div>
+      <h5 class="fw-bold mb-0">{{ record.username or identity.username }}</h5>
+      <p class="text-muted mb-3">{{ record.email or identity.email }}</p>
+      <div class="d-flex justify-content-center gap-2 mb-3">
+        <span class="badge role-badge role-{{ identity.role }}"><i class="fa-solid fa-shield-halved me-1"></i>{{ identity.role | capitalize }}</span>
+        <span class="badge bg-secondary-subtle text-secondary"><i class="fa-solid fa-building me-1"></i>{{ identity.tenant }}</span>
+      </div>
+      <div class="progress-thin mb-1">
+        <div class="progress-bar" role="progressbar" style="width: {{ profile_completion }}%; background: linear-gradient(90deg,#14b8a6,#0f766e);"></div>
+      </div>
+      <small class="text-muted">{{ profile_completion }}% profile complete</small>
+    </div>
+  </div>
+
+  <!-- Editable form -->
+  <div class="col-lg-8">
+    <div class="card-lift p-4 fade-in-up">
+      <h5 class="fw-bold mb-4"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Edit Details</h5>
+
+      <form method="post"
+            action="{{ url_for('users.user_details_update') }}"
+            enctype="multipart/form-data"
+            class="needs-validation"
+            novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Full name</label>
+            <input type="text" class="form-control" name="name" value="{{ record.username or '' }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email" value="{{ record.email or '' }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Phone</label>
+            <input type="text" class="form-control" name="phone" value="{{ record.phone or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Department</label>
+            <input type="text" class="form-control" name="department" value="{{ record.department or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Tenant</label>
+            <input type="text" class="form-control" value="{{ identity.tenant }}" disabled>
+            <small class="text-muted">Tenant is fixed by your organization and cannot be changed here.</small>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Role</label>
+            <input type="text" class="form-control" value="{{ identity.role | capitalize }}" disabled>
+            <small class="text-muted">Role is managed by your administrator.</small>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Profile image</label>
+            <input type="file" class="form-control" name="profile_image" accept="image/*">
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-brand px-4"><i class="fa-solid fa-floppy-disk me-2"></i>Save changes</button>
+          <button type="reset" class="btn btn-outline-soft px-4">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Submit the profile form with fetch() so the multipart request (CSRF token +
+  // optional profile_image) is sent exactly as the browser would send it, and the
+  // user never lands on a bare API response.
+  //
+  // The backend answers this POST with a 302 redirect plus a Flask flash message
+  // (routes/users.py::user_details_update), not with JSON. The redirect is
+  // deliberately NOT followed inside fetch(): following it would load the
+  // destination page in the background, swallow the queued flash message and
+  // discard the result. With redirect: 'manual' the flash stays in the session
+  // cookie and is shown by the normal toast when the profile page is reloaded,
+  // so the success message (or the validation errors) come from the server,
+  // rendered by the existing UI.
+  (function () {
+    'use strict';
+
+    var actionUrl = {{ url_for('users.user_details_update') | tojson }};
+    var form = Array.prototype.find.call(document.forms, function (f) {
+      return f.getAttribute('action') === actionUrl;
+    });
+    if (!form) { return; }
+
+    var submitBtn = form.querySelector('button[type="submit"]');
+    var submitBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+    var alertEl = null;
+    var submitting = false;
+
+    function clearAlert() {
+      if (alertEl && alertEl.parentNode) {
+        alertEl.parentNode.removeChild(alertEl);
+      }
+      alertEl = null;
+    }
+
+    function showError(message) {
+      clearAlert();
+      alertEl = document.createElement('div');
+      alertEl.className = 'alert alert-danger alert-dismissible fade show mb-4';
+      alertEl.setAttribute('role', 'alert');
+
+      var text = document.createElement('span');
+      text.textContent = message;
+
+      var closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'btn-close';
+      closeBtn.setAttribute('data-bs-dismiss', 'alert');
+      closeBtn.setAttribute('aria-label', 'Close');
+
+      alertEl.appendChild(text);
+      alertEl.appendChild(closeBtn);
+      form.parentNode.insertBefore(alertEl, form);
+      alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function setBusy(busy) {
+      submitting = busy;
+      form.setAttribute('aria-busy', busy ? 'true' : 'false');
+      if (!submitBtn) { return; }
+      submitBtn.disabled = busy;
+      submitBtn.innerHTML = busy
+        ? '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving...'
+        : submitBtnHtml;
+    }
+
+    // Only reached for a real (non-redirect) HTTP error response.
+    function errorMessage(status) {
+      if (status === 400) {
+        return 'The request was rejected. The page may have expired - please refresh it and try again.';
+      }
+      if (status === 401 || status === 403) {
+        return 'Your session may have expired. Please refresh the page or sign in again.';
+      }
+      if (status === 413) {
+        return 'The selected image is too large. Please choose a smaller file.';
+      }
+      if (status >= 500) {
+        return 'The server ran into a problem while saving your profile. Please try again in a moment.';
+      }
+      return 'We could not update your profile. Please check your details and try again.';
+    }
+
+    // Restore the button if the page is shown again from the back/forward cache.
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted) { setBusy(false); }
+    });
+
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      if (submitting) { return; }
+
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+      }
+
+      setBusy(true);
+      clearAlert();
+      var leaving = false;
+
+      try {
+        var response = await fetch(form.getAttribute('action'), {
+          method: 'POST',
+          body: new FormData(form), // includes csrf_token and profile_image; the browser sets the multipart boundary
+          credentials: 'same-origin',
+          redirect: 'manual'
+        });
+
+        if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+          // The server handled the request and queued its flash message.
+          // Reload the profile page (GET) so the message is shown as a toast.
+          leaving = true; // keep the button disabled while navigating
+          window.location.assign(window.location.pathname);
+          return;
+        }
+
+        showError(errorMessage(response.status));
+      } catch (networkErr) {
+        showError('Network error. Please check your connection and try again.');
+      } finally {
+        if (!leaving) { setBusy(false); }
+      }
+    });
+  })();
+</script>
+{% endblock %}

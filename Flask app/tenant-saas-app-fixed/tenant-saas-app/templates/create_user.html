@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}User Created{% endblock %}
+{% block page_title %}User Created{% endblock %}
+{% block content %}
+<div class="row justify-content-center fade-in-up">
+  <div class="col-lg-7">
+    <div class="card-lift p-5 text-center">
+      <div class="success-check"><i class="fa-solid fa-check"></i></div>
+      <h3 class="fw-bold mb-2">User created successfully</h3>
+      <p class="text-muted mb-4">The account has been provisioned in Cognito and {{ tenant }}. Share the temporary credentials below securely — the user will be required to set a new password on first login.</p>
+
+      <div class="card-lift p-4 text-start mb-4" style="background:#f8f9fd;">
+        <div class="row g-3">
+          <div class="col-md-6"><span class="text-muted small">User ID</span><div class="fw-semibold">{{ user_id }}</div></div>
+          <div class="col-md-6"><span class="text-muted small">Username</span><div class="fw-semibold">{{ username }}</div></div>
+          <div class="col-md-6"><span class="text-muted small">Email</span><div class="fw-semibold">{{ email }}</div></div>
+          <div class="col-md-6"><span class="text-muted small">Role</span><div class="fw-semibold">{{ role | capitalize }}</div></div>
+          <div class="col-12">
+            <span class="text-muted small">Temporary password</span>
+            <div class="fw-bold" style="font-family:monospace;font-size:1.1rem;">{{ temp_password }}</div>
+          </div>
+        </div>
+      </div>
+
+      <a href="{{ url_for('admin.manage_users_page') }}" class="btn btn-brand px-4">
+        <i class="fa-solid fa-arrow-left me-2"></i>Back to Manage Users
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
