@@ -213,11 +213,14 @@ Every protected method requires a valid Cognito-issued JWT carrying the matching
 ```text
 Secure-Multi-Tenant-SaaS-Platform/
 │
-├── README.md
-├── LICENSE
-├── .gitignore
+├── Billing Function/
+│   ├── Lambda function/
+│   └── .gitkeep
 │
-├── docs/
+├── DEMO VIDEO/
+│   └── DEMO_VIDEO.md
+│
+├── Deliverables/
 │   ├── 01-Business-Requirement-Document.md
 │   ├── 02-Solution-Architecture.md
 │   ├── 03-High-Level-Design.md
@@ -227,53 +230,88 @@ Secure-Multi-Tenant-SaaS-Platform/
 │   ├── 07-Security-Architecture.md
 │   ├── 08-Monitoring-and-Logging.md
 │   ├── 09-Backup-and-Disaster-Recovery.md
-│   ├── 10-Cost-Estimation.md
-│   ├── 11-Final-Quality-Review.md
-│   └── Presentation
+│   └── 10-Cost-Estimation.md
 │
-├── aws-services/
-│   ├── 01-VPC-README.md
-│   ├── 02-EC2-README.md
-│   ├── 03-ALB-README.md
-│   ├── 04-RDS-README.md
-│   ├── 05-IAM-README.md
-│   ├── 06-KMS-README.md
-│   ├── 07-SecretsManager-README.md
-│   ├── 08-SQS-README.md
-│   ├── 09-CloudFront-README.md
-│   ├── 10-APIGateway-README.md
-│   ├── 11-Lambda-README.md
-│   ├── 12-ECR-README.md
-│   ├── 13-ECS-README.md
-│   ├── 14-CloudShell-README.md
-│   ├── 15-CloudWatch-README.md
-│   ├── 16-Billing-Budgets-README.md
-│   ├── 17-Cognito-README.md
-│   └── 18-WindowsCMD-README.md
+├── Diagram/
+│   ├── HLD/
+│   ├── INFRASTRUCTURE/
+│   ├── LLD/
+│   ├── SECURITY ARCHITECTURE/
+│   ├── SOLUTION ARCHITECTURE/
+│   └── .gitkeep
 │
-└── application/
+├── Flask app/
+│   ├── tenant-saas-app-fixed/
+│   └── .gitkeep
+│
+├── Services/
+│   ├── ALB/
+│   ├── API GATEWAY/
+│   ├── BILLING AND COST MANAGEMENT/
+│   ├── CLOUDFRONT/
+│   ├── CLOUDSHELL/
+│   ├── CLOUDWATCH/
+│   ├── COGNITO/
+│   ├── EC2/
+│   ├── ECR/
+│   ├── ECS/
+│   ├── IAM/
+│   ├── KMS/
+│   ├── LAMBDA/
+│   ├── RDS/
+│   ├── SECRETS MANAGER/
+│   ├── SQS/
+│   ├── VPC/
+│   ├── WINDOWS CMD/
+│   └── .gitkeep
+│
+├── images/
+│   ├── ALB/
+│   ├── API GATEWAY/
+│   ├── BILLING AND COST MANAGEMENT/
+│   ├── CLOUDFRONT/
+│   ├── CLOUDSHELL/
+│   ├── CLOUDWATCH/
+│   ├── COGNITO/
+│   ├── EC2/
+│   ├── ECR/
+│   ├── ECS/
+│   ├── IAM/
+│   ├── IMPLEMENTATION/
+│   ├── KMS/
+│   ├── LAMBDA/
+│   ├── RDS/
+│   ├── RDS DATABASE TABLES/
+│   ├── SECRET MANAGER/
+│   ├── SQS/
+│   ├── VPC/
+│   └── .gitkeep
+│
+├── .gitignore
+└── README.md
 ```
 
 ---
 
 # 📚 Project Documentation
 
-| # | Document | Status |
-|---|----------|--------|
-| 01 | Business Requirement Document (BRD) | ✅ |
-| 02 | Solution Architecture | ✅ |
-| 03 | High-Level Design (HLD) | ✅ |
-| 04 | Low-Level Design (LLD) | ✅ |
-| 05 | Infrastructure Diagram | ✅ |
-| 06 | Deployment Guide / SOP | ✅ |
-| 07 | Security Architecture | ✅ |
-| 08 | Monitoring and Logging | ✅ |
-| 09 | Backup and Disaster Recovery | ✅ |
-| 10 | Cost Estimation | ✅ |
-| 11 | Final Quality Review | ✅ |
-| — | AWS Service Documentation (18 services) | ✅ |
-| — | Presentation | ✅ |
-| — | Demo Video | ✅ |
+| #  | Document                                | Status |
+| -- | --------------------------------------- | ------ |
+| 01 | Business Requirement Document (BRD)     | ✅      |
+| 02 | Solution Architecture                   | ✅      |
+| 03 | High-Level Design (HLD)                 | ✅      |
+| 04 | Low-Level Design (LLD)                  | ✅      |
+| 05 | Infrastructure Diagram                  | ✅      |
+| 06 | Deployment Guide / SOP                  | ✅      |
+| 07 | Security Architecture                   | ✅      |
+| 08 | Monitoring and Logging                  | ✅      |
+| 09 | Backup and Disaster Recovery            | ✅      |
+| 10 | Cost Estimation                         | ✅      |
+| —  | AWS Service Documentation (18 Services) | ✅      |
+| —  | Architecture Diagrams                   | ✅      |
+| —  | Flask Application                       | ✅      |
+| —  | Billing Function                        | ✅      |
+| —  | Demo Video                              | ✅      |
 
 ---
 
